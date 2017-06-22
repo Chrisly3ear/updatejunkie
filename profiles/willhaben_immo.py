@@ -74,7 +74,7 @@ class WillhabenImmoProfile(base.ProfileBase):
         url_components = list(urllib.parse.urlparse(url))
         query = dict(urllib.parse.parse_qs(url_components[4]))
         if "p" in query:
-            query["page"] = int(query["page"]) + 1
+            query["page"] = [int(query["page"][0]) + 1]
         else:
             query["p"] = 1
         url_components[4] = urllib.parse.urlencode(query, doseq=True)
@@ -82,18 +82,21 @@ class WillhabenImmoProfile(base.ProfileBase):
 
     def parse(self, html):
         soup = BeautifulSoup(html)
+        if soup.find(name="div", attrs={"class":"emptySearch"}):
+            return list()
         allads = soup.find(name="div", attrs={"id":"resultlist"})
-        ads = allads.findAll("article", attrs={"class":"search-result-entry"})
+        ads = allads.findAll("article", attrs={"class":"search-result-entry", "itemtype": "http://schema.org/Residence"})
         #print(ads)
         #ads.extend(allads.findAll("li", attrs={"class":"odd clearfix"}))
         return list(map(self._ad_soup_to_dict, ads))
 
     def _ad_soup_to_dict(self, soup):
         tags = self._tags.copy()
-        print(
-            soup
-
-        )
+        if soup.find(name="div", attrs={"class":"emptySearch"}):
+            return tags
+        # datetime
+        tags["datetime"] = datetime.now()
+        
         tags["id"] = int(
             
             soup.find(name="div", attrs={"class":"header"}).find(name="a").attrs["data-ad-link"]
