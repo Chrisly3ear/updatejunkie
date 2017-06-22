@@ -31,6 +31,8 @@ import logging
 from email.mime.text import MIMEText
 from email.header import Header
 
+from pushbullet import PushBullet
+
 
 class NotificationError(Exception):pass
 
@@ -41,7 +43,35 @@ class Notification:
     
     def serialize(self):
         raise NotImplementedError("serialize() must be implemented in subclass.")
-    
+
+
+class PushbulletNotification(Notification):
+    """
+    Sends PushBullet notification using python's pushbullet.py module
+    """
+
+    def __init__(self, api, subject, body):
+        self._api = api
+        self._subject = subject
+        self._body = body
+
+    def notify(self, ad):
+        pb = None
+        try:
+            pb = PushBullet(self._api)
+            logging.debug("Sending notification to Pushbullet")
+            pb.push_note(self._subject.format(**ad), self._body.format(**ad))
+        except Exception as error:
+            logging.error("Failed to send notification: {}".format(error.args))
+        finally:
+            pb._session.close()
+            pb = None
+
+    def serialize(self):
+        return {"type": "pushbullet", "api": self._api}
+
+
+
     
 class EmailNotification(Notification):
     """

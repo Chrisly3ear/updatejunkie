@@ -184,8 +184,26 @@ class AddNotificationCommand(Command):
         notification = None
         if notification_type == "email":
             notification = self._setup_email_notification()
+        elif notification_type == "pushbullet":
+            notification = self._setup_pushbullet_notification()
         self._server[observer_name].notifications.add_notification(notification)
 
+    def _setup_pushbullet_notification(self):
+        try:
+            api = self._cmd_info["api"]
+            subject = self._cmd_info["subject"]
+            body = self._cmd_info["body"]
+        except KeyError as error:
+            raise CommandError("Some information is missing: {}",format(error.args[0]))
+
+        from notifications import PushbulletNotification
+        pushbullet_notification = PushbulletNotification(
+                                               api=api,
+                                               subject=subject,
+                                               body=body)
+        return pushbullet_notification
+    
+    
     def _setup_email_notification(self):
         try:
             header_from = self._cmd_info["from"]

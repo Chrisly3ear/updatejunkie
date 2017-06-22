@@ -44,6 +44,7 @@ class WillhabenImmoProfile(base.ProfileBase):
     
     def __init__(self):
         self._tags = {"id":0,
+                        "time_found":"",
                         "url":"",
                         "title":"",
                         "size":0,
@@ -94,8 +95,6 @@ class WillhabenImmoProfile(base.ProfileBase):
             return list()
         allads = soup.find(name="div", attrs={"id":"resultlist"})
         ads = allads.findAll("article", attrs={"class":"search-result-entry", "itemtype": "http://schema.org/Residence"})
-        #print(ads)
-        #ads.extend(allads.findAll("li", attrs={"class":"odd clearfix"}))
         return list(map(self._ad_soup_to_dict, ads))
 
     def _ad_soup_to_dict(self, soup):
@@ -104,6 +103,7 @@ class WillhabenImmoProfile(base.ProfileBase):
             return tags
         # datetime
         tags["datetime"] = datetime.now()
+        tags["time_found"] = tags["datetime"].strftime("%Y-%m-%d %H:%M")
         
         link = soup.find(name="div", attrs={"class":"header"}).find(name="a")
         tags["id"] = int(link.attrs["data-ad-link"])
@@ -134,7 +134,7 @@ class WillhabenImmoProfile(base.ProfileBase):
             b64str = re.search(regex, script.text)
             BeautifulSoup(base64.b64decode(b64str.group(1)).decode('UTF-8')).find(name="span").text
 
-            price_text = ",".join(re.findall("[0-9]+", base64.b64decode(b64str.group(1)).decode('UTF-8')))
+            price_text = ".".join(re.findall("[0-9]+", base64.b64decode(b64str.group(1)).decode('UTF-8')))
             if len(price_text) > 0:
                 tags["price"] = float(price_text)
         except:
