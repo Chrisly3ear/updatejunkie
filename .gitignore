@@ -7,6 +7,9 @@ store/
 config/*.cfg
 config/*.json
 client/*
+client
+api/bottle/*
+api/bottle
 
 # Python
 
