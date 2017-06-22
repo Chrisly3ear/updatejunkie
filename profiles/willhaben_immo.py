@@ -27,8 +27,7 @@ SOFTWARE.
 import re
 import urllib.parse
 import itertools
-import sys
-print (sys.version)
+import base64
 
 from bs4 import BeautifulSoup
 
@@ -44,7 +43,7 @@ class WillhabenImmoProfile(base.ProfileBase):
     base_url = "http://www.willhaben.at"
     
     def __init__(self):
-        self._tags = {"id":0, "url":"", "title":"", "size":0, "price":0.0, "description":"", "location":"", "zip":0}
+        self._tags = {"id":0, "url":"", "title":"", "size":0, "rooms":0, "price":0.0, "description":"", "location":"", "zipcode":""}
         
     @property
     def tags(self):
@@ -97,34 +96,46 @@ class WillhabenImmoProfile(base.ProfileBase):
         # datetime
         tags["datetime"] = datetime.now()
         
-        tags["id"] = int(
-            
-            soup.find(name="div", attrs={"class":"header"}).find(name="a").attrs["data-ad-link"]
-            
-            )
-        print(tags["id"])
-        # tags["url"] = self.base_url + soup.h2.a.attrs['href']        
-        # tags["title"] = soup.h2.a.text
+        link = soup.find(name="div", attrs={"class":"header"}).find(name="a")
+        tags["id"] = int(link.attrs["data-ad-link"])
+        tags["url"] = self.base_url + link.attrs['href']
+
+        # Content Feld
+        content = soup.find(name="section", attrs={"class":"content-section"})
+        #Info Feld
+        info = content.find(name="div", attrs={"class":"info"})
+
+        # Groesse u Zimmer
+        size_text = info.find('span', attrs={'class':'desc-left'}).text
+        tags["size"] = int(re.findall("[0-9]+", size_text)[0])
+        tags["rooms"] = int(re.findall("[0-9]+", size_text)[1])
+
+        # Preis rauswuzeln
+        placeholder_id = info.find(name="div").attrs["id"]
+        script = soup.find(name="script")
+        regex = placeholder_id+".+?'([^']+)'"
+        b64str = re.search(regex, script.text)
+        BeautifulSoup(base64.b64decode(b64str.group(1)).decode('UTF-8')).find(name="span").text
+
+        price_text = "".join(re.findall("[0-9]+", base64.b64decode(b64str.group(1)).decode('UTF-8')))
+        if len(price_text) > 0:
+            tags["price"] = int(price_text)
+
+        # Titel
+        tags["title"] = soup.find(name="span", attrs={"itemprop":"name"}).text.strip()
+
+        # Beschreibung
+        description_text = content.find('div', attrs={'class':'description'}).text
+        lines = re.findall("^[\r\n\s]*([^\r^\n]+)[\r\n\s]*", description_text)
+        if len(lines) > 0:
+            tags["description"] = lines[0]
+
         
-        # size_text = soup.find('p', attrs={'class':'size'}).text
-        # tags["size"] = int(re.findall("[0-9]+", size_text)[0])
-        
-        # price_text = soup.find('p', attrs={'class':'price'}).text
-        # price_text = "".join(re.findall("[0-9]+", price_text))
-        # if len(price_text) > 0:
-        #     tags["price"] = int(price_text)
-        
-        # description_text = soup.find('p', attrs={'class':'description'}).text
-        # lines = re.findall("^[\r\n\s]*([^\r^\n]+)[\r\n\s]*", description_text)
-        # if len(lines) > 0:
-        #     tags["description"] = lines[0]
+        location_text = content.find('div', attrs={'class':'address-lg'}).text
+        lines = re.findall(r'^[\r\n\s]*([^\d^\s][^\r^\n]+)?[\r\n\s]*([0-9]+)[\r\n\s]*([^\r^\n]+)[\r\n\s]*', location_text)
+        if len(lines) > 0:
+            tags["location"] = " ".join(lines[0])
             
-        # location_text = soup.find('p', attrs={'class':'location'}).text
-        # lines = re.findall("^[\r\n\s]*[0-9]+[\r\n\s]*([^\r^\n]+)[\r\n\s]*", location_text)
-        # if len(lines) > 0:
-        #     tags["location"] = lines[0]
-            
-        # zip_text = re.findall("[0-9]+", location_text)[0]
-        # tags["zipcode"] = int(zip_text)
+        tags["zipcode"] = int(re.findall(r'[0-9]{4}', location_text)[0])
         
         return tags
