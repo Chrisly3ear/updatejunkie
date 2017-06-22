@@ -27,9 +27,14 @@ SOFTWARE.
 import re
 import urllib.parse
 import itertools
+import sys
+print (sys.version)
 
 from bs4 import BeautifulSoup
+
 from . import base
+
+
 from datetime import datetime
 from enum import Enum
 

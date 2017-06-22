@@ -77,5 +77,5 @@ if __name__ == "__main__":
             logging.warning("Timeout while waiting for the server to shut down. Force exiting now.")
 
     # Waiting for Ctrl-c
-    signal.signal(signal.SIGINT, shutdown)
-    signal.pause()
+    #signal.signal(signal.SIGINT, shutdown)
+    #signal.pause()
