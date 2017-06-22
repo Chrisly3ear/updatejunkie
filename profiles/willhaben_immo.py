@@ -43,7 +43,16 @@ class WillhabenImmoProfile(base.ProfileBase):
     base_url = "http://www.willhaben.at"
     
     def __init__(self):
-        self._tags = {"id":0, "url":"", "title":"", "size":0, "rooms":0, "price":0.0, "description":"", "location":"", "zipcode":""}
+        self._tags = {"id":0,
+                        "url":"",
+                        "title":"",
+                        "size":0,
+                        "rooms":0,
+                        "price":0.0,
+                        "description":"",
+                        "location":"",
+                        "zipcode":"",
+                        "price_p_size":""}
         
     @property
     def tags(self):
@@ -107,19 +116,32 @@ class WillhabenImmoProfile(base.ProfileBase):
 
         # Groesse u Zimmer
         size_text = info.find('span', attrs={'class':'desc-left'}).text
-        tags["size"] = int(re.findall("[0-9]+", size_text)[0])
-        tags["rooms"] = int(re.findall("[0-9]+", size_text)[1])
+        try:
+            tags["size"] = int(re.findall("[0-9]+", size_text)[0])
+        except:
+            pass
+        try:
+            tags["rooms"] = int(re.findall("[0-9]+", size_text)[1])
+        except:
+            tags["rooms"] = "?"
+
 
         # Preis rauswuzeln
-        placeholder_id = info.find(name="div").attrs["id"]
-        script = soup.find(name="script")
-        regex = placeholder_id+".+?'([^']+)'"
-        b64str = re.search(regex, script.text)
-        BeautifulSoup(base64.b64decode(b64str.group(1)).decode('UTF-8')).find(name="span").text
+        try:
+            placeholder_id = info.find(name="div").attrs["id"]
+            script = soup.find(name="script")
+            regex = placeholder_id+".+?'([^']+)'"
+            b64str = re.search(regex, script.text)
+            BeautifulSoup(base64.b64decode(b64str.group(1)).decode('UTF-8')).find(name="span").text
 
-        price_text = "".join(re.findall("[0-9]+", base64.b64decode(b64str.group(1)).decode('UTF-8')))
-        if len(price_text) > 0:
-            tags["price"] = int(price_text)
+            price_text = ",".join(re.findall("[0-9]+", base64.b64decode(b64str.group(1)).decode('UTF-8')))
+            if len(price_text) > 0:
+                tags["price"] = float(price_text)
+        except:
+            pass
+
+        if tags["size"] != 0:
+            tags["price_p_size"] = '{:.2f}'.format(tags["price"]/tags["size"])
 
         # Titel
         tags["title"] = soup.find(name="span", attrs={"itemprop":"name"}).text.strip()
@@ -135,7 +157,10 @@ class WillhabenImmoProfile(base.ProfileBase):
         lines = re.findall(r'^[\r\n\s]*([^\d^\s][^\r^\n]+)?[\r\n\s]*([0-9]+)[\r\n\s]*([^\r^\n]+)[\r\n\s]*', location_text)
         if len(lines) > 0:
             tags["location"] = " ".join(lines[0])
-            
-        tags["zipcode"] = int(re.findall(r'[0-9]{4}', location_text)[0])
+        
+        try:
+            tags["zipcode"] = int(re.findall(r'[0-9]{4}', location_text)[0])
+        except:
+            pass
         
         return tags
