@@ -65,7 +65,7 @@ class PushbulletNotification(Notification):
         except Exception as error:
             logging.error("Failed to send notification: {}".format(error.args))
         finally:
-            pb._session.close()
+            #pb._session.close()
             pb = None
 
     def serialize(self):
