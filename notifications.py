@@ -61,6 +61,7 @@ class PushbulletNotification(Notification):
             pb = PushBullet(self._api)
             logging.debug("Sending notification to Pushbullet")
             pb.push_note(self._subject.format(**ad), self._body.format(**ad))
+            logging.debug("Notification to Pushbullet sent")
         except Exception as error:
             logging.error("Failed to send notification: {}".format(error.args))
         finally:
