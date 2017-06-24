@@ -148,19 +148,21 @@ class PushbulletNotification(Notification):
                             filter(
                                 lambda psh: self._compare_title_and_body(psh, title, body),
                                 pushes))
-
-            if remain_ratelim < 1000:
-                reset_in = ratelim_reset - time.time()
-                m, s = divmod(reset_in, 60)
-                h, m = divmod(m, 60)
+            
+            reset_in = ratelim_reset - time.time()
+            m, s = divmod(reset_in, 60)
+            h, m = divmod(m, 60)
+            if remain_ratelim == 0:
+                logging.error("CANNOT SEND NOTIFICATION! Rate limit reached. Can send again in "+ "%d:%02d:%02d" % (h, m, s))
+            elif remain_ratelim < 1000:
                 self.push_note("Approaching Rate Limit!", "Remaining: "+ "{:,}".format(remain_ratelim) + \
                                                           "\nReset in: " + "%d:%02d:%02d" % (h, m, s))
 
 
-            if not alrdy_pushed:
+            if not alrdy_pushed and remain_ratelim > 0:
                 self.push_note(title, body)
                 logging.debug("Notification to Pushbullet sent")
-            else:
+            elif remain_ratelim > 0:
                 logging.debug("Notification to Pushbullet has already been sent. Not sending again.")
         except Exception as error:
             logging.error("Failed to send notification: {}".format(error.args))
