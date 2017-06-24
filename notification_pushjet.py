@@ -96,8 +96,12 @@ class PushjetNotification(Notification):
             if "url" in ad:
                 link = ad["url"]
 
-            self._push_note(title, body, link)
-            logging.debug("Notification to Pushjet sent")
+            if not "pushed" in ad:
+                ad["pushed"] = True
+                self._push_note(title, body, link)
+                logging.debug("Notification to Pushjet sent")
+            else:
+                logging.debug("Notification to Pushjet has already been sent")
         except Exception as error:
             logging.error("Failed to send notification: {}".format(error.args))
 
