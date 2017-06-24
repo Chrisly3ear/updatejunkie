@@ -117,6 +117,7 @@ class PushbulletNotification(Notification):
             data["cursor"] = cursor
 
         response = self._request("GET", self._api_url + "/pushes", None, data)
+        response.close()
         return response
 
     def _compare_title_and_body(self, push, title=None, body=None):
