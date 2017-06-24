@@ -186,6 +186,8 @@ class AddNotificationCommand(Command):
             notification = self._setup_email_notification()
         elif notification_type == "pushbullet":
             notification = self._setup_pushbullet_notification()
+        elif notification_type == "pushjet":
+            notification = self._setup_pushjet_notification()
         self._server[observer_name].notifications.add_notification(notification)
 
     def _setup_pushbullet_notification(self):
@@ -202,6 +204,22 @@ class AddNotificationCommand(Command):
                                                subject=subject,
                                                body=body)
         return pushbullet_notification
+    
+    def _setup_pushjet_notification(self):
+        try:
+            secret = self._cmd_info["secret"]
+            title = self._cmd_info["title"]
+            body = self._cmd_info["body"]
+            level = self._cmd_info["level"]
+        except KeyError as error:
+            raise CommandError("Some information is missing: {}", format(error.args[0]))
+
+        from notification_pushjet import PushjetNotification
+        pushjet_notification = PushjetNotification(secret=secret,
+                                                   title=title,
+                                                   body=body,
+                                                   level=level)
+        return pushjet_notification
     
     
     def _setup_email_notification(self):
