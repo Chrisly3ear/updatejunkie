@@ -27,6 +27,7 @@ SOFTWARE.
 import smtplib
 import re
 import logging
+
 import time
 
 from email.mime.text import MIMEText
@@ -66,7 +67,10 @@ class PushbulletNotification(Notification):
 
         if postdata:
             postdata = json.dumps(postdata)
-
+        
+        # Reduce logging spam
+        logging.getLogger("requests").setLevel(logging.WARNING)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
         res = requests.request(method,
                                url,
                                data=postdata,
