@@ -76,7 +76,7 @@ class PushbulletNotification(Notification):
                                auth=HTTPBasicAuth(self._api_key, ""))
         
         res.connection.close()
-        res.raise_for_status()
+        #res.raise_for_status() # Don't care
         retval = res.json()
         retval["headers"] = res.headers
         return retval
