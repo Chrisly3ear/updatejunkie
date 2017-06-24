@@ -148,7 +148,7 @@ class PushbulletNotification(Notification):
                                 lambda psh: self._compare_title_and_body(psh, title, body),
                                 pushes))
 
-            if remain_ratelim < 17000:
+            if remain_ratelim < 1000:
                 reset_in = ratelim_reset - time.time()
                 m, s = divmod(reset_in, 60)
                 h, m = divmod(m, 60)
