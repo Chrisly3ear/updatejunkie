@@ -27,11 +27,14 @@ SOFTWARE.
 import smtplib
 import re
 import logging
+import time
 
 from email.mime.text import MIMEText
 from email.header import Header
 
-from pushbullet.pushbullet import PushBullet
+import json
+import requests
+from requests.auth import HTTPBasicAuth
 
 
 class NotificationError(Exception):pass
@@ -51,25 +54,118 @@ class PushbulletNotification(Notification):
     """
 
     def __init__(self, api, subject, body):
-        self._api = api
+        self._api_url = "https://api.pushbullet.com/v2"
+        self._api_key = api
         self._subject = subject
         self._body = body
 
+    def _request(self, method, url, postdata=None, params=None, files=None):
+        headers = {"Accept": "application/json",
+                   "Content-Type": "application/json",
+                   "User-Agent": "pyPushBullet"}
+
+        if postdata:
+            postdata = json.dumps(postdata)
+
+        res = requests.request(method,
+                               url,
+                               data=postdata,
+                               params=params,
+                               headers=headers,
+                               files=files,
+                               auth=HTTPBasicAuth(self._api_key, ""))
+
+        res.raise_for_status()
+        retval = res.json()
+        retval["headers"] = res.headers
+        return retval
+
+    def push_note(self, title, body, recipient=None, recipient_type="device_iden"):
+        """ Push a note
+            https://docs.pushbullet.com/v2/pushes
+            Arguments:
+            title -- a title for the note
+            body -- the body of the note
+            recipient -- a recipient (all devices if omitted)
+            recipient_type -- a type of recipient (device, email, channel or client)
+        """
+
+        data = {"type": "note",
+                "title": title,
+                "body": body}
+
+        data[recipient_type] = recipient
+
+        return self._request("POST", self._api_url + "/pushes", data)
+
+    def get_push_history(self, active=True, modified_after=0, limit=None, cursor=None):
+        """ Get Push History
+            https://docs.pushbullet.com/v2/pushes
+            Returns a dictionary of "pushes" and a possible "cursor"
+            Arguments:
+            active -- Don't return deleted/dismissed pushes
+            modified_after -- Request pushes modified after this timestamp
+            limit -- Limit pushes per page (paginated results)
+            cursor -- Request another page of pushes (if necessary)
+        """
+        data = {"modified_after": modified_after}
+        if active:
+            data['active'] = "true"
+        if limit:
+            data["limit"] = limit
+        if cursor:
+            data["cursor"] = cursor
+
+        response = self._request("GET", self._api_url + "/pushes", None, data)
+        return response
+
+    def _compare_title_and_body(self, push, title=None, body=None):
+
+        if "title"in push and "body" in push:
+            return push["title"] == title and push["body"] == body
+        elif "title"in push:
+            return push["title"] == title and body is None
+        elif "body" in push:
+            return push["body"] == body and title is None
+        return False
+
     def notify(self, ad):
-        pb = None
         try:
-            pb = PushBullet(self._api)
+
             logging.debug("Sending notification to Pushbullet")
-            pb.pushNote(None, self._subject.format(**ad), self._body.format(**ad))
-            logging.debug("Notification to Pushbullet sent")
+            title = self._subject.format(**ad)
+            body = self._body.format(**ad)
+            history = self.get_push_history()
+            remain_ratelim = 0
+            if "X-Ratelimit-Remaining" in history["headers"]:
+                remain_ratelim = int(history["headers"]["X-Ratelimit-Remaining"])
+            if "X-Ratelimit-Reset" in history["headers"]:
+                ratelim_reset = int(history["headers"]["X-Ratelimit-Reset"])
+            pushes = list(history["pushes"])
+
+            alrdy_pushed = list(
+                            filter(
+                                lambda psh: self._compare_title_and_body(psh, title, body),
+                                pushes))
+
+            if remain_ratelim < 17000:
+                reset_in = ratelim_reset - time.time()
+                m, s = divmod(reset_in, 60)
+                h, m = divmod(m, 60)
+                self.push_note("Approaching Rate Limit!", "Remaining: "+ "{:,}".format(remain_ratelim) + \
+                                                          "\nReset in: " + "%d:%02d:%02d" % (h, m, s))
+
+
+            if not alrdy_pushed:
+                self.push_note(title, body)
+                logging.debug("Notification to Pushbullet sent")
+            else:
+                logging.debug("Notification to Pushbullet has already been sent. Not sending again.")
         except Exception as error:
             logging.error("Failed to send notification: {}".format(error.args))
-        finally:
-            #pb._session.close()
-            pb = None
 
     def serialize(self):
-        return {"type": "pushbullet", "api": self._api}
+        return {"type": "pushbullet", "api": self._api_key}
 
 
 
