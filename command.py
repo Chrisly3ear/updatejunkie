@@ -196,7 +196,7 @@ class AddNotificationCommand(Command):
         except KeyError as error:
             raise CommandError("Some information is missing: {}",format(error.args[0]))
 
-        from notifications import PushbulletNotification
+        from notification_pushbullet import PushbulletNotification
         pushbullet_notification = PushbulletNotification(
                                                api=api,
                                                subject=subject,
@@ -217,7 +217,7 @@ class AddNotificationCommand(Command):
         if type(header_to) == str:
             header_to = [header_to]   # make it a list
 
-        from notifications import EmailNotification
+        from notification_email import EmailNotification
         email_notification = EmailNotification(host=smtp["host"], port=smtp["port"],
                                                auth=smtp["auth"], user=smtp["user"],
                                                pwd=smtp["pwd"],
