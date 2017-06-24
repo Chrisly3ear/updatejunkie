@@ -78,6 +78,7 @@ class PushbulletNotification(Notification):
         res.raise_for_status()
         retval = res.json()
         retval["headers"] = res.headers
+        res.connection.close()
         return retval
 
     def push_note(self, title, body, recipient=None, recipient_type="device_iden"):
@@ -117,7 +118,6 @@ class PushbulletNotification(Notification):
             data["cursor"] = cursor
 
         response = self._request("GET", self._api_url + "/pushes", None, data)
-        response.close()
         return response
 
     def _compare_title_and_body(self, push, title=None, body=None):
