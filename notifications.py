@@ -142,12 +142,13 @@ class PushbulletNotification(Notification):
                 remain_ratelim = int(history["headers"]["X-Ratelimit-Remaining"])
             if "X-Ratelimit-Reset" in history["headers"]:
                 ratelim_reset = int(history["headers"]["X-Ratelimit-Reset"])
-            pushes = list(history["pushes"])
+            if "pushes" in history:
+                pushes = list(history["pushes"])
 
-            alrdy_pushed = list(
-                            filter(
-                                lambda psh: self._compare_title_and_body(psh, title, body),
-                                pushes))
+                alrdy_pushed = list(
+                                filter(
+                                    lambda psh: self._compare_title_and_body(psh, title, body),
+                                    pushes))
             
             reset_in = ratelim_reset - time.time()
             m, s = divmod(reset_in, 60)
@@ -159,7 +160,7 @@ class PushbulletNotification(Notification):
                                                           "\nReset in: " + "%d:%02d:%02d" % (h, m, s))
 
 
-            if not alrdy_pushed and remain_ratelim > 0:
+            if remain_ratelim > 0 and not alrdy_pushed:
                 self.push_note(title, body)
                 logging.debug("Notification to Pushbullet sent")
             elif remain_ratelim > 0:
