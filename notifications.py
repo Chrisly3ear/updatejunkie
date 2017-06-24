@@ -31,7 +31,7 @@ import logging
 from email.mime.text import MIMEText
 from email.header import Header
 
-from pushbullet import PushBullet
+from pushbullet.pushbullet import PushBullet
 
 
 class NotificationError(Exception):pass
@@ -60,7 +60,7 @@ class PushbulletNotification(Notification):
         try:
             pb = PushBullet(self._api)
             logging.debug("Sending notification to Pushbullet")
-            pb.push_note(self._subject.format(**ad), self._body.format(**ad))
+            pb.pushNote(None, self._subject.format(**ad), self._body.format(**ad))
             logging.debug("Notification to Pushbullet sent")
         except Exception as error:
             logging.error("Failed to send notification: {}".format(error.args))
