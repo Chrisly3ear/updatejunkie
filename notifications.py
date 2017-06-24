@@ -85,7 +85,7 @@ class PushbulletNotification(Notification):
         retval["headers"] = res.headers
         return retval
 
-    def push_note(self, title, body, recipient=None, recipient_type="device_iden"):
+    def _push_note(self, title, body, recipient=None, recipient_type="device_iden"):
         """ Push a note
             https://docs.pushbullet.com/v2/pushes
             Arguments:
@@ -103,7 +103,7 @@ class PushbulletNotification(Notification):
 
         return self._request("POST", self._api_url + "/pushes", data)
 
-    def get_push_history(self, active=True, modified_after=0, limit=None, cursor=None):
+    def _get_push_history(self, active=True, modified_after=0, limit=None, cursor=None):
         """ Get Push History
             https://docs.pushbullet.com/v2/pushes
             Returns a dictionary of "pushes" and a possible "cursor"
@@ -140,7 +140,7 @@ class PushbulletNotification(Notification):
             logging.debug("Sending notification to Pushbullet")
             title = self._subject.format(**ad)
             body = self._body.format(**ad)
-            history = self.get_push_history()
+            history = self._get_push_history(limit=1) # Avoid sending notifications twice in a row!
             remain_ratelim = 0
             if "X-Ratelimit-Remaining" in history["headers"]:
                 remain_ratelim = int(history["headers"]["X-Ratelimit-Remaining"])
@@ -160,12 +160,12 @@ class PushbulletNotification(Notification):
             if remain_ratelim == 0:
                 logging.error("CANNOT SEND NOTIFICATION! Rate limit reached. Can send again in "+ "%d:%02d:%02d" % (h, m, s))
             elif remain_ratelim < 1000:
-                self.push_note("Approaching Rate Limit!", "Remaining: "+ "{:,}".format(remain_ratelim) + \
+                self._push_note("Approaching Rate Limit!", "Remaining: "+ "{:,}".format(remain_ratelim) + \
                                                           "\nReset in: " + "%d:%02d:%02d" % (h, m, s))
 
 
             if remain_ratelim > 0 and not alrdy_pushed:
-                self.push_note(title, body)
+                self._push_note(title, body)
                 logging.debug("Notification to Pushbullet sent")
             elif remain_ratelim > 0:
                 logging.debug("Notification to Pushbullet has already been sent. Not sending again.")
