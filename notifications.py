@@ -74,11 +74,11 @@ class PushbulletNotification(Notification):
                                headers=headers,
                                files=files,
                                auth=HTTPBasicAuth(self._api_key, ""))
-
+        
+        res.connection.close()
         res.raise_for_status()
         retval = res.json()
         retval["headers"] = res.headers
-        res.connection.close()
         return retval
 
     def push_note(self, title, body, recipient=None, recipient_type="device_iden"):
