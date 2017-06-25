@@ -89,6 +89,7 @@ class Observer(threading.Thread):
         hits = map(self._assessor.check, ads)
         hit_ads = [ad for ad in compress(ads, hits)]
         new_ads = self._store.add_ads(hit_ads)
+        new_ads = [dict(y) for y in set([frozenset(x.items()) for x in new_ads])] # Clear duplicates!
         for ad in new_ads:
             try:
                 logging.info("Observer '{}' Found Ad: {}".format(self._name, ad["title"]))
