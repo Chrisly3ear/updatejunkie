@@ -207,7 +207,7 @@ class AddNotificationCommand(Command):
     
     def _setup_pushjet_notification(self):
         try:
-	    api_url = self._cmd_info["api_url"]
+            api_url = self._cmd_info["api_url"]
             secret = self._cmd_info["secret"]
             title = self._cmd_info["title"]
             body = self._cmd_info["body"]
