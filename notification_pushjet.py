@@ -38,8 +38,8 @@ class PushjetNotification(Notification):
     Sends PushBullet notification using python's pushbullet.py module
     """
 
-    def __init__(self, secret, title, body, level):
-        self._api_url = "https://api.pushjet.io"
+    def __init__(self, api_url, secret, title, body, level):
+        self._api_url = api_url
         self._secret = secret
         self._title = title
         self._body = body
