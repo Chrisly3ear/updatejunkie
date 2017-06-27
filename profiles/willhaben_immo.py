@@ -102,7 +102,7 @@ class WillhabenImmoProfile(base.ProfileBase):
         if soup.find(name="div", attrs={"class":"emptySearch"}):
             return tags
         # datetime
-        tags["datetime"] = datetime.now()
+        tags["datetime"] = datetime.now().replace(second=0, microsecond=0)
         tags["time_found"] = tags["datetime"].strftime("%Y-%m-%d %H:%M")
         
         link = soup.find(name="div", attrs={"class":"header"}).find(name="a")
