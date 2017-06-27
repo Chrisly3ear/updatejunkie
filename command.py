@@ -207,6 +207,7 @@ class AddNotificationCommand(Command):
     
     def _setup_pushjet_notification(self):
         try:
+            api_url = self._cmd_info["api_url"]
             secret = self._cmd_info["secret"]
             title = self._cmd_info["title"]
             body = self._cmd_info["body"]
@@ -215,7 +216,8 @@ class AddNotificationCommand(Command):
             raise CommandError("Some information is missing: {}", format(error.args[0]))
 
         from notification_pushjet import PushjetNotification
-        pushjet_notification = PushjetNotification(secret=secret,
+        pushjet_notification = PushjetNotification(api_url=api_url,
+                                                   secret=secret,
                                                    title=title,
                                                    body=body,
                                                    level=level)
